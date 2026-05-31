@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c9a84c"/>
+      <stop offset="100%" stop-color="#8b6914"/>
+    </linearGradient>
+    <linearGradient id="goldGradLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e8d5a3"/>
+      <stop offset="100%" stop-color="#c9a84c"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Outer halo ring - breathes -->
+  <circle cx="60" cy="60" r="52" fill="none" stroke="url(#goldGradLight)" stroke-width="1" opacity=".2">
+    <animate attributeName="r" values="50;54;50" dur="4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values=".15;.35;.15" dur="4s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Inner halo ring -->
+  <circle cx="60" cy="60" r="42" fill="none" stroke="url(#goldGrad)" stroke-width=".8" opacity=".15">
+    <animate attributeName="r" values="41;44;41" dur="5s" repeatCount="indefinite" begin=".5s"/>
+    <animate attributeName="opacity" values=".1;.25;.1" dur="5s" repeatCount="indefinite" begin=".5s"/>
+  </circle>
+
+  <!-- Light rays - slow rotation -->
+  <g filter="url(#softGlow)" opacity=".08">
+    <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="40s" repeatCount="indefinite"/>
+    <line x1="60" y1="12" x2="60" y2="28" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="60" y1="92" x2="60" y2="108" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="12" y1="60" x2="28" y2="60" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="92" y1="60" x2="108" y2="60" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="26" y1="26" x2="37" y2="37" stroke="#c9a84c" stroke-width="1" stroke-linecap="round"/>
+    <line x1="83" y1="83" x2="94" y2="94" stroke="#c9a84c" stroke-width="1" stroke-linecap="round"/>
+    <line x1="94" y1="26" x2="83" y2="37" stroke="#c9a84c" stroke-width="1" stroke-linecap="round"/>
+    <line x1="26" y1="94" x2="37" y2="83" stroke="#c9a84c" stroke-width="1" stroke-linecap="round"/>
+  </g>
+
+  <!-- Cross vertical - assembles from scattered pieces -->
+  <!-- Top piece flies in from above -->
+  <line x1="60" y1="30" x2="60" y2="48" stroke="url(#goldGrad)" stroke-width="5" stroke-linecap="round" filter="url(#glow)">
+    <animate attributeName="y1" values="-20;30" dur="1.8s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+    <animate attributeName="y2" values="-2;48" dur="1.8s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+    <animate attributeName="opacity" values="0;1" dur="1s" fill="freeze"/>
+  </line>
+
+  <!-- Bottom piece flies in from below -->
+  <line x1="60" y1="52" x2="60" y2="85" stroke="url(#goldGrad)" stroke-width="5" stroke-linecap="round" filter="url(#glow)">
+    <animate attributeName="y1" values="140;52" dur="2s" fill="freeze" begin=".3s" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+    <animate attributeName="y2" values="173;85" dur="2s" fill="freeze" begin=".3s" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+    <animate attributeName="opacity" values="0;1" dur="1s" fill="freeze" begin=".3s"/>
+  </line>
+
+  <!-- Left arm flies in from left -->
+  <line x1="38" y1="48" x2="56" y2="48" stroke="url(#goldGrad)" stroke-width="5" stroke-linecap="round" filter="url(#glow)">
+    <animate attributeName="x1" values="-30;38" dur="1.5s" fill="freeze" begin=".8s" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+    <animate attributeName="x2" values="-8;56" dur="1.5s" fill="freeze" begin=".8s" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+    <animate attributeName="opacity" values="0;1" dur=".8s" fill="freeze" begin=".8s"/>
+  </line>
+
+  <!-- Right arm flies in from right -->
+  <line x1="64" y1="48" x2="82" y2="48" stroke="url(#goldGrad)" stroke-width="5" stroke-linecap="round" filter="url(#glow)">
+    <animate attributeName="x1" values="150;64" dur="1.5s" fill="freeze" begin="1s" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+    <animate attributeName="x2" values="168;82" dur="1.5s" fill="freeze" begin="1s" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+    <animate attributeName="opacity" values="0;1" dur=".8s" fill="freeze" begin="1s"/>
+  </line>
+
+  <!-- Center glow burst when cross assembles -->
+  <circle cx="60" cy="48" r="0" fill="#c9a84c" opacity="0">
+    <animate attributeName="r" values="0;18;0" dur="1.2s" begin="2s" fill="freeze"/>
+    <animate attributeName="opacity" values="0;.25;0" dur="1.2s" begin="2s" fill="freeze"/>
+  </circle>
+
+  <!-- Continuous subtle pulse on assembled cross -->
+  <circle cx="60" cy="55" r="20" fill="none" stroke="#c9a84c" stroke-width=".5" opacity="0">
+    <animate attributeName="opacity" values="0;0;.15;0" dur="4s" begin="3.5s" repeatCount="indefinite"/>
+    <animate attributeName="r" values="15;25" dur="4s" begin="3.5s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Small sparkle particles after assembly -->
+  <circle cx="45" cy="35" r="1.2" fill="#e8d5a3" opacity="0">
+    <animate attributeName="opacity" values="0;.8;0" dur="2s" begin="2.5s" repeatCount="indefinite"/>
+    <animate attributeName="cy" values="35;30" dur="2s" begin="2.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="75" cy="38" r="1" fill="#e8d5a3" opacity="0">
+    <animate attributeName="opacity" values="0;.6;0" dur="2.5s" begin="3s" repeatCount="indefinite"/>
+    <animate attributeName="cy" values="38;32" dur="2.5s" begin="3s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="55" cy="70" r=".8" fill="#e8d5a3" opacity="0">
+    <animate attributeName="opacity" values="0;.5;0" dur="3s" begin="3.5s" repeatCount="indefinite"/>
+    <animate attributeName="cy" values="70;65" dur="3s" begin="3.5s" repeatCount="indefinite"/>
+  </circle>
+</svg>
