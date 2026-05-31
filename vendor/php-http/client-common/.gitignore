@@ -1,0 +1,11 @@
+/.php-cs-fixer.php
+/.php-cs-fixer.cache
+/behat.yml
+/build/
+/composer.lock
+/phpspec.yml
+/phpunit.xml
+/phpstan.neon
+/vendor/
+
+.phpunit.result.cache

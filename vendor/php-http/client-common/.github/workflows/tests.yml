@@ -1,0 +1,125 @@
+name: tests
+
+on:
+  push:
+      branches:
+          - '*.x'
+  pull_request:
+
+jobs:
+  latest:
+    name: PHP ${{ matrix.php }} Latest
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.1', '7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer:v2
+          coverage: none
+
+      - name: Install PHP dependencies
+        run: composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Execute tests
+        run: composer test
+
+  lowest:
+    name: PHP ${{ matrix.php }} Lowest
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.1', '7.4', '8.2', '8.5']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer:v2
+          coverage: none
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --prefer-stable --prefer-lowest --no-interaction --no-progress
+
+      - name: Execute tests
+        run: composer test
+
+  symfony:
+    name: Symfony ${{ matrix.symfony }} LTS
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - symfony: '4.4.*'
+            php-version: '7.1'
+          - symfony: '5.4.*'
+            php-version: '7.4'
+          - symfony: '6.4.*'
+            php-version: '8.2'
+          - symfony: '7.4.*'
+            php-version: '8.2'
+          - symfony: '8.*'
+            php-version: '8.5'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          tools: composer:v2
+          coverage: none
+
+      - name: Install dependencies
+        env:
+          SYMFONY_REQUIRE: ${{ matrix.symfony }}
+        run: |
+          composer global config --no-plugins allow-plugins.symfony/flex true
+          composer global require --no-progress --no-scripts --no-plugins symfony/flex
+          composer update --prefer-dist --no-interaction --prefer-stable --no-progress
+
+      - name: Execute tests
+        run: composer test
+
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 7.4
+          tools: composer:v2
+          coverage: xdebug
+
+      - name: Install dependencies
+        run: |
+          composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Execute tests
+        run: composer test-ci
+
+      - name: Upload coverage
+        run: |
+          wget https://scrutinizer-ci.com/ocular.phar
+          php ocular.phar code-coverage:upload --format=php-clover build/coverage.xml

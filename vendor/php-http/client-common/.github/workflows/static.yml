@@ -1,0 +1,39 @@
+name: static
+
+on:
+  push:
+      branches:
+          - '*.x'
+  pull_request:
+
+jobs:
+  phpstan:
+    name: PHPStan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Remove phpspec
+        run: composer remove --dev friends-of-phpspec/phpspec-code-coverage phpspec/phpspec
+
+      - name: PHPStan
+        uses: docker://oskarstark/phpstan-ga
+        env:
+          REQUIRE_DEV: false
+        with:
+          args: analyze --no-progress
+
+  php-cs-fixer:
+      name: PHP-CS-Fixer
+      runs-on: ubuntu-latest
+
+      steps:
+          - name: Checkout code
+            uses: actions/checkout@v4
+
+          - name: PHP-CS-Fixer
+            uses: docker://oskarstark/php-cs-fixer-ga
+            with:
+                args: --dry-run --diff
