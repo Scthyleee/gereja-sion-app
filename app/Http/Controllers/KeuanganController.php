@@ -49,6 +49,14 @@ class KeuanganController extends Controller
             'tipe'          => 'required|in:penerimaan,pengeluaran',
             'nomor_up'      => 'required|integer',
             'kategori_akun' => 'required|in:mph,kategorial',
+        ], [
+            'kode.required'    => 'Kode akun wajib diisi.',
+            'kode.unique'      => 'Kode akun ":input" sudah digunakan, pilih kode lain.',
+            'kode.max'         => 'Kode akun maksimal 50 karakter.',
+            'nama.required'    => 'Nama akun wajib diisi.',
+            'tipe.required'    => 'Tipe akun wajib dipilih.',
+            'nomor_up.required'=> 'Unit Pelayanan wajib dipilih.',
+            'kategori_akun.required' => 'Kategori akun wajib dipilih.',
         ]);
 
         KodeAkun::create([
