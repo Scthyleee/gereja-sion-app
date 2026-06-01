@@ -304,6 +304,7 @@ function updateAkunSelect() {
         plugins: ['dropdown_input'],
         create: false,
         allowEmptyOption: true,
+        maxOptions: false,
         sortField: { field: 'text', direction: 'asc' }
     });
 }
