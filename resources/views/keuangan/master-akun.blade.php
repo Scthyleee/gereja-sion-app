@@ -158,6 +158,11 @@
             <form action="{{ route('keuangan.akun.store') }}" method="POST">
                 @csrf
                 <div class="modal-body">
+                    @if($errors->any())
+                    <div class="alert alert-danger py-2 small">
+                        <ul class="mb-0 ps-3">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
+                    </div>
+                    @endif
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Kode Akun <span class="text-danger">*</span></label>
@@ -284,6 +289,13 @@ function editAkun(id, kode, nama, tipe, nomorUp, kategori, sumber, keterangan) {
     document.getElementById('formEditAkun').action = '/admin/keuangan/master-akun/' + id;
     new bootstrap.Modal(document.getElementById('modalEditAkun')).show();
 }
+
+// Auto-open modal if validation errors exist
+@if($errors->any())
+    document.addEventListener('DOMContentLoaded', function() {
+        new bootstrap.Modal(document.getElementById('modalTambahAkun')).show();
+    });
+@endif
 </script>
 @endpush
 @endsection

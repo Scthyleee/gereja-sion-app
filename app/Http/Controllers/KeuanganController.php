@@ -64,7 +64,8 @@ class KeuanganController extends Controller
             'aktif'          => true,
         ]);
 
-        return back()->with('success', "Kode akun {$request->kode} berhasil ditambahkan.");
+        return redirect()->route('keuangan.master', ['q' => $request->kode])
+            ->with('success', "Kode akun {$request->kode} berhasil ditambahkan.");
     }
 
     public function updateKodeAkun(Request $request, KodeAkun $kodeAkun)
