@@ -425,28 +425,30 @@ class JadwalController extends Controller
                 }
             }
 
-            // Insentif → transaksi pengeluaran (only petugas with insentif > 0)
-            $totalInsentif = $jadwal->petugas->where('kategori', 'insentif')->sum('nominal_insentif');
-            if ($totalInsentif > 0) {
-                // Use jadwal's selected kode_akun_insentif_id, fallback to II(APg).01.01
-                $akunInsentifId = $jadwal->kode_akun_insentif_id
-                    ?? KodeAkun::where('kode', 'II(APg).01.01')->value('id');
-                if ($akunInsentifId) {
-                    Transaksi::create([
-                        'tanggal' => $jadwal->tanggal,
-                        'kode_akun_id' => $akunInsentifId,
-                        'tipe' => 'pengeluaran',
-                        'jumlah' => $totalInsentif,
-                        'keterangan' => "Insentif petugas {$jadwal->jenis_ibadah} ({$jadwal->petugas->where('kategori','insentif')->count()} orang)",
-                        'jenis_ibadah' => $jadwal->jenis_ibadah,
-                        'jadwal_ibadah_id' => $jadwal->id,
-                        'bulan' => $jadwal->tanggal->month,
-                        'tahun' => $jadwal->tanggal->year,
-                        'kantong_dana' => 'rutin',
-                        'status' => 'verified',
-                        'dibuat_oleh' => auth()->id(),
-                    ]);
-                }
+            // Insentif → 1 transaksi per petugas (bukan dijumlah jadi 1)
+            $akunInsentifId = $jadwal->kode_akun_insentif_id
+                ?? KodeAkun::where('kode', 'II(APg).01.01')->value('id');
+
+            foreach ($jadwal->petugas->where('kategori', 'insentif') as $jp) {
+                if ($jp->nominal_insentif <= 0) continue;
+
+                $namaPetugas = $jp->petugas->nama_petugas ?? $jp->nama_external ?? 'Petugas';
+                $jenisTugas  = $jp->jenis_tugas ?? $jp->slot_nama ?? '-';
+
+                Transaksi::create([
+                    'tanggal'        => $jadwal->tanggal,
+                    'kode_akun_id'   => $akunInsentifId,
+                    'tipe'           => 'pengeluaran',
+                    'jumlah'         => $jp->nominal_insentif,
+                    'keterangan'     => "Insentif {$namaPetugas} ({$jenisTugas}) — {$jadwal->jenis_ibadah}",
+                    'jenis_ibadah'   => $jadwal->jenis_ibadah,
+                    'jadwal_ibadah_id' => $jadwal->id,
+                    'bulan'          => $jadwal->tanggal->month,
+                    'tahun'          => $jadwal->tanggal->year,
+                    'kantong_dana'   => 'rutin',
+                    'status'         => 'verified',
+                    'dibuat_oleh'    => auth()->id(),
+                ]);
             }
 
             $jadwal->update(['status' => 'completed']);
