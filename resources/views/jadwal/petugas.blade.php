@@ -13,17 +13,24 @@
 {{-- Daftar Petugas --}}
 <div class="col-lg-8">
 <div class="content-card mb-4">
-    <div class="content-card__header d-flex justify-content-between">
+    <div class="content-card__header d-flex justify-content-between align-items-center gap-2 flex-wrap">
         <h6 class="mb-0"><i class="fas fa-users-cog me-2"></i>Daftar Petugas</h6>
-        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambah"><i class="fas fa-plus me-1"></i>Tambah</button>
+        <div class="d-flex align-items-center gap-2">
+            <div class="input-group input-group-sm" style="width:220px">
+                <span class="input-group-text" style="background:var(--bg);border-color:var(--border);color:var(--text-muted)"><i class="fas fa-search"></i></span>
+                <input type="text" id="searchPetugas" class="form-control form-control-sm" placeholder="Cari nama atau job..." autocomplete="off" style="background:var(--bg);border-color:var(--border);color:var(--text)">
+            </div>
+            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambah"><i class="fas fa-plus me-1"></i>Tambah</button>
+        </div>
     </div>
     <div class="content-card__body p-0">
         <div class="table-responsive">
             <table class="table table-hover mb-0">
                 <thead><tr><th>Nama</th><th>Job / Tugas</th><th>Status</th><th style="width:120px">Aksi</th></tr></thead>
-                <tbody>
+                <tbody id="petugasTableBody">
                     @forelse($petugas as $p)
-                    <tr>
+                    @php $jobsStr = $p->roles->pluck('jenis_tugas')->join(' '); @endphp
+                    <tr class="petugas-row" data-nama="{{ strtolower($p->nama_petugas) }}" data-jobs="{{ strtolower($jobsStr) }}">
                         <td class="fw-semibold">{{ $p->nama_petugas }}</td>
                         <td>
                             @forelse($p->roles as $role)
@@ -53,6 +60,7 @@
                     @empty
                     <tr><td colspan="4" class="text-center text-muted py-4">Belum ada petugas</td></tr>
                     @endforelse
+                    <tr id="noResultRow" style="display:none"><td colspan="4" class="text-center text-muted py-4"><i class="fas fa-search me-2"></i>Tidak ada petugas yang cocok</td></tr>
                 </tbody>
             </table>
         </div>
@@ -280,6 +288,35 @@ function removeRoleByName(petugasId, roleName) {
     form.innerHTML = `@csrf @method('DELETE') <input type="hidden" name="jenis_tugas" value="${roleName}">`;
     document.body.appendChild(form);
     form.submit();
+}
+
+// Live search filter for petugas table
+const searchInput = document.getElementById('searchPetugas');
+if (searchInput) {
+    searchInput.addEventListener('input', function () {
+        const keyword = this.value.toLowerCase().trim();
+        const rows = document.querySelectorAll('#petugasTableBody tr.petugas-row');
+        const noResult = document.getElementById('noResultRow');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const nama = (row.dataset.nama || '').toLowerCase();
+            const jobs = (row.dataset.jobs || '').toLowerCase();
+            const match = !keyword || nama.includes(keyword) || jobs.includes(keyword);
+            row.style.display = match ? '' : 'none';
+            if (match) visibleCount++;
+        });
+
+        if (noResult) noResult.style.display = visibleCount === 0 && keyword ? '' : 'none';
+    });
+
+    // Clear search on Escape
+    searchInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            this.value = '';
+            this.dispatchEvent(new Event('input'));
+        }
+    });
 }
 </script>
 @endpush
