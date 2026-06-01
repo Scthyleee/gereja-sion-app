@@ -32,6 +32,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // --- Public CMS Page (no login required) ---
 Route::get('/', [PublicController::class, 'index'])->name('public.home');
+Route::get('/warta/{id}/download', [WartaController::class, 'print'])->name('warta.public.download');
 
 // --- Admin Panel (protected, prefix /admin) ---
 Route::middleware(['auth', 'page.access'])->prefix('admin')->group(function () {
@@ -94,6 +95,7 @@ Route::middleware(['auth', 'page.access'])->prefix('admin')->group(function () {
     Route::delete('/jadwal-petugas/{petugas}', [JadwalController::class, 'destroyPetugasMaster'])->name('petugas.destroy');
     Route::post('/jadwal-petugas/{petugas}/role', [JadwalController::class, 'addPetugasRole'])->name('petugas.role.add');
     Route::delete('/petugas-role/{role}', [JadwalController::class, 'deletePetugasRole'])->name('petugas.role.delete');
+    Route::delete('/jadwal-petugas/{petugas}/role-delete-by-name', [JadwalController::class, 'deleteRoleByName'])->name('petugas.role.deleteByName');
     Route::get('/jadwal-insentif', [JadwalController::class, 'insentif'])->name('insentif.index');
     Route::get('/insentif-setting', [JadwalController::class, 'insentifSetting'])->name('insentif.setting');
     Route::post('/insentif-setting', [JadwalController::class, 'storeInsentifConfig'])->name('insentif.config.store');

@@ -329,7 +329,7 @@
                     <span><i class="fas fa-calendar"></i> {{ \Carbon\Carbon::parse($w->tanggal_awal)->format('d M') }} — {{ \Carbon\Carbon::parse($w->tanggal_akhir)->format('d M Y') }}</span>
                 </div>
                 <div style="margin-top:1rem">
-                    <a href="{{ route('warta.print', $w->id) }}" target="_blank" style="display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1rem;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);border-radius:8px;font-size:.85rem;font-weight:600">
+                    <a href="{{ route('warta.public.download', $w->id) }}" target="_blank" style="display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1rem;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);border-radius:8px;font-size:.85rem;font-weight:600">
                         <i class="fas fa-file-pdf"></i> Unduh PDF
                     </a>
                 </div>

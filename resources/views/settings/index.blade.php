@@ -322,50 +322,76 @@
 </div>
 
 @elseif($tab === 'website')
-{{-- Website / Maintenance Mode --}}
+{{-- Website / Maintenance Mode (CMS-based) --}}
 <div class="content-card">
-    <div class="content-card__header"><h6 class="mb-0"><i class="fas fa-globe me-2"></i>Pengaturan Website</h6></div>
+    <div class="content-card__header"><h6 class="mb-0"><i class="fas fa-tools me-2"></i>Mode Maintenance</h6></div>
     <div class="content-card__body">
-        <div class="row">
-            <div class="col-md-8">
-                <h6 class="fw-bold mb-2"><i class="fas fa-tools me-2" style="color:var(--warning)"></i>Maintenance Mode</h6>
-                <p class="text-muted small mb-3">Aktifkan mode maintenance untuk sementara menonaktifkan akses publik ke website. Pengunjung akan melihat halaman maintenance dengan countdown.</p>
+        <div class="alert" style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);color:var(--text)">
+            <i class="fas fa-info-circle text-warning me-1"></i>
+            <strong>Super Admin</strong> selalu bisa mengakses admin panel dan public page meskipun maintenance aktif.
+        </div>
 
-                @if(app()->isDownForMaintenance())
-                <div class="p-3 rounded mb-3" style="background:rgba(255,152,0,.1);border:1px solid rgba(255,152,0,.2)">
-                    <div class="d-flex align-items-center gap-2 mb-2">
-                        <span style="width:10px;height:10px;border-radius:50%;background:#ff9800;animation:pulse 1.5s infinite"></span>
-                        <strong style="color:var(--warning)">Website sedang dalam Maintenance Mode</strong>
+        <div class="row g-4 mt-2">
+            <div class="col-md-7">
+                <div class="p-4 rounded" style="border:1px solid var(--border);background:rgba(0,0,0,.15)">
+                    <h6 class="fw-bold mb-3"><i class="fas fa-globe me-2"></i>Public Page</h6>
+
+                    @if(($cmsSettings['maintenance_public'] ?? '0') === '1')
+                    {{-- Maintenance is ON --}}
+                    <div class="p-3 rounded mb-3" style="background:rgba(255,152,0,.1);border:1px solid rgba(255,152,0,.2)">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span style="width:10px;height:10px;border-radius:50%;background:#ff9800;display:inline-block;animation:pulse 1.5s infinite"></span>
+                            <strong style="color:var(--warning)">Maintenance Mode AKTIF</strong>
+                            <span class="badge bg-danger ms-1">AKTIF</span>
+                        </div>
+                        @if(isset($cmsSettings['maintenance_durasi']) && isset($cmsSettings['maintenance_start']))
+                            @php
+                                $startTime = \Carbon\Carbon::parse($cmsSettings['maintenance_start']);
+                                $durasi = (int)$cmsSettings['maintenance_durasi'];
+                                $endTime = $startTime->copy()->addHours($durasi);
+                                $elapsed = now()->diffForHumans($startTime, true);
+                                $remaining = now()->lt($endTime) ? now()->diffForHumans($endTime, true) : 'Sudah melebihi durasi';
+                            @endphp
+                            <div class="small text-muted mt-2">
+                                <div><i class="fas fa-clock me-1"></i>Dimulai: {{ $startTime->format('d M Y H:i') }}</div>
+                                <div><i class="fas fa-hourglass-half me-1"></i>Durasi: {{ $durasi }} jam</div>
+                                <div><i class="fas fa-stopwatch me-1"></i>Berlangsung: {{ $elapsed }}</div>
+                                <div><i class="fas fa-hourglass-end me-1"></i>Sisa: {{ $remaining }}</div>
+                            </div>
+                        @endif
+                        <p class="small text-muted mt-2 mb-0">Pengunjung melihat halaman maintenance. Klik tombol di bawah untuk mengaktifkan kembali.</p>
                     </div>
-                    <p class="small text-muted mb-0">Klik tombol di bawah untuk mengaktifkan kembali website.</p>
+                    <form action="{{ route('settings.maintenance') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn btn-success"><i class="fas fa-power-off me-1"></i>Aktifkan Website (Go Online)</button>
+                    </form>
+                    @else
+                    {{-- Website is Online --}}
+                    <div class="p-3 rounded mb-3" style="background:rgba(82,138,94,.08);border:1px solid rgba(82,138,94,.15)">
+                        <div class="d-flex align-items-center gap-2">
+                            <span style="width:10px;height:10px;border-radius:50%;background:#4caf50;display:inline-block"></span>
+                            <strong style="color:var(--success)">Website sedang Online</strong>
+                            <span class="badge bg-success ms-1">NORMAL</span>
+                        </div>
+                    </div>
+                    <form action="{{ route('settings.maintenance') }}" method="POST" class="d-flex align-items-end gap-3" id="formMaintenance">
+                        @csrf
+                        <div>
+                            <label class="form-label fw-semibold small">Durasi Maintenance (Jam)</label>
+                            <input type="number" name="durasi" class="form-control" value="2" min="1" max="72" style="width:120px">
+                        </div>
+                        <button type="button" class="btn btn-warning" id="btnMaintenance" onclick="confirmMaintenance(this)">
+                            <i class="fas fa-wrench me-1"></i>Aktifkan Maintenance
+                        </button>
+                    </form>
+                    @endif
                 </div>
-                <form action="{{ route('settings.maintenance') }}" method="POST">
-                    @csrf
-                    <button type="submit" class="btn btn-success"><i class="fas fa-power-off me-1"></i>Aktifkan Website (Go Online)</button>
-                </form>
-                @else
-                <div class="p-3 rounded mb-3" style="background:rgba(82,138,94,.08);border:1px solid rgba(82,138,94,.15)">
-                    <div class="d-flex align-items-center gap-2">
-                        <span style="width:10px;height:10px;border-radius:50%;background:#4caf50"></span>
-                        <strong style="color:var(--success)">Website sedang Online</strong>
-                    </div>
-                </div>
-                <form action="{{ route('settings.maintenance') }}" method="POST" class="d-flex align-items-end gap-3" id="formMaintenance">
-                    @csrf
-                    <div>
-                        <label class="form-label fw-semibold small">Durasi Maintenance (Jam)</label>
-                        <input type="number" name="durasi" class="form-control" value="2" min="1" max="72" style="width:120px">
-                    </div>
-                    <button type="button" class="btn btn-warning" id="btnMaintenance" onclick="confirmMaintenance(this)">
-                        <i class="fas fa-wrench me-1"></i>Aktifkan Maintenance
-                    </button>
-                </form>
-                @endif
             </div>
-            <div class="col-md-4 text-center">
+            <div class="col-md-5 text-center">
                 <div class="p-4" style="background:var(--bg);border-radius:16px">
                     <i class="fas fa-server fa-3x mb-3" style="color:var(--primary);opacity:.5"></i>
-                    <p class="small text-muted mb-0">Saat maintenance mode aktif, hanya admin yang bisa mengakses website menggunakan secret link.</p>
+                    <p class="small text-muted mb-2">Saat maintenance aktif, pengunjung akan melihat halaman maintenance.</p>
+                    <p class="small text-muted mb-0"><strong>Super Admin</strong> tetap bisa mengakses semuanya.</p>
                 </div>
             </div>
         </div>

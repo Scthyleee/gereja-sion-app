@@ -58,16 +58,16 @@ class KodeAkun extends Model
         return $query->where('tipe', 'pengeluaran')->where('kode', 'LIKE', 'II(APg).%.01');
     }
 
-    // Scope: kolekte ibadah (flagged via sumber_lapangan='kolekte')
+    // Scope: kolekte ibadah (parent + sub-akun)
     public function scopeKolekte($query)
     {
-        return $query->where('tipe', 'penerimaan')->where('sumber_lapangan', 'kolekte');
+        return $query->where('tipe', 'penerimaan')->where('kode', 'LIKE', 'I(APn).01.01%');
     }
 
-    // Scope: persembahan syukur (I(APn).XX.02)
+    // Scope: persembahan syukur (parent + sub-akun)
     public function scopePersembahanSyukur($query)
     {
-        return $query->where('tipe', 'penerimaan')->where('kode', 'LIKE', 'I(APn).%.02');
+        return $query->where('tipe', 'penerimaan')->where('kode', 'LIKE', 'I(APn).01.02%');
     }
 
     // Scope: filter by unit pelayanan

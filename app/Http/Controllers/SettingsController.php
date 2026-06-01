@@ -19,12 +19,9 @@ class SettingsController extends Controller
         $settings = DB::table('system_settings')->pluck('setting_value', 'setting_key');
         $users = User::with('role')->orderBy('nama')->get();
         $roles = Role::all();
-        $pengurus = DB::table('pengurus_gereja')->orderBy('urutan')->get();
-        $auditLog = DB::table('audit_log')
-            ->leftJoin('users', 'audit_log.user_id', '=', 'users.id')
-            ->select('audit_log.*', 'users.nama as user_nama')
-            ->orderByDesc('audit_log.created_at')
-            ->limit(50)->get();
+        // Tables dropped — use empty collections for backward view compatibility
+        $pengurus = collect();
+        $auditLog = collect();
 
         // Access control
         $pages = [
@@ -62,10 +59,13 @@ class SettingsController extends Controller
             return redirect()->route('settings.index', ['tab' => 'ttd'])->with('success', 'Penandatangan dihapus.');
         }
 
+        // CMS settings for maintenance
+        $cmsSettings = DB::table('cms_settings')->pluck('value', 'key');
+
         return view('settings.index', compact(
             'tab', 'profil', 'settings', 'users', 'roles', 'pengurus', 'auditLog',
             'pages', 'permissions', 'slotTemplates', 'unitList', 'approvalSettings',
-            'penandatangan'
+            'penandatangan', 'cmsSettings'
         ));
     }
 
@@ -291,23 +291,31 @@ class SettingsController extends Controller
         return redirect()->route('settings.index', ['tab' => 'ttd'])->with('success', 'Penandatangan ditambahkan.');
     }
 
-    // --- MAINTENANCE MODE ---
+    // --- MAINTENANCE MODE (CMS-based) ---
     public function toggleMaintenance(Request $request)
     {
-        if (app()->isDownForMaintenance()) {
-            \Illuminate\Support\Facades\Artisan::call('up');
-            return redirect()->route('settings.index', ['tab' => 'website'])->with('success', 'Website sudah ONLINE kembali.');
+        $currentVal = DB::table('cms_settings')->where('key', 'maintenance_public')->value('value') ?? '0';
+        $newVal = $currentVal === '1' ? '0' : '1';
+
+        DB::table('cms_settings')->updateOrInsert(
+            ['key' => 'maintenance_public'],
+            ['value' => $newVal, 'type' => 'boolean', 'updated_at' => now()]
+        );
+
+        // Save duration if activating
+        if ($newVal === '1') {
+            $durasi = max(1, (int)$request->input('durasi', 2));
+            DB::table('cms_settings')->updateOrInsert(
+                ['key' => 'maintenance_durasi'],
+                ['value' => (string)$durasi, 'type' => 'text', 'updated_at' => now()]
+            );
+            DB::table('cms_settings')->updateOrInsert(
+                ['key' => 'maintenance_start'],
+                ['value' => now()->toIso8601String(), 'type' => 'text', 'updated_at' => now()]
+            );
+            return redirect()->route('settings.index', ['tab' => 'website'])->with('warning', "Maintenance mode AKTIF selama {$durasi} jam. Public page tidak bisa diakses.");
         }
 
-        $durasi = max(1, (int)$request->input('durasi', 2)); // jam
-        $secret = 'gereja-sion-admin-' . now()->format('Ymd');
-
-        \Illuminate\Support\Facades\Artisan::call('down', [
-            '--retry' => $durasi * 3600,
-            '--secret' => $secret,
-        ]);
-
-        // Redirect to secret URL to set bypass cookie, then back to settings
-        return redirect("/{$secret}")->with('warning', "Maintenance mode aktif selama {$durasi} jam. Secret bypass: /{$secret}");
+        return redirect()->route('settings.index', ['tab' => 'website'])->with('success', 'Website sudah ONLINE kembali.');
     }
 }

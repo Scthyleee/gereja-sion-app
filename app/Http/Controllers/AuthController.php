@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\DB;
 
 class AuthController extends Controller
@@ -23,46 +24,22 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        // Check login attempts
-        $ip = $request->ip();
-        $attempt = DB::table('login_attempts')
-            ->where('ip_address', $ip)
-            ->where('email', $request->email)
-            ->first();
+        // Rate limiting: 5 attempts per 3 minutes per IP+email combo
+        $throttleKey = 'login:' . $request->ip() . '|' . $request->email;
 
-        if ($attempt && $attempt->locked_until && now()->lt($attempt->locked_until)) {
-            $remaining = now()->diffInSeconds($attempt->locked_until);
-            return back()->withErrors(['email' => "Akun terkunci. Coba lagi dalam {$remaining} detik."])->withInput();
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            return back()->withErrors(['email' => "Terlalu banyak percobaan login. Coba lagi dalam {$seconds} detik."])->withInput();
         }
 
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
-            // Reset attempts on success
-            DB::table('login_attempts')
-                ->where('ip_address', $ip)
-                ->where('email', $request->email)
-                ->delete();
-
+            RateLimiter::clear($throttleKey);
             $request->session()->regenerate();
             Auth::user()->update(['last_login' => now()]);
-
             return redirect()->intended(route('dashboard'));
         }
 
-        // Increment failed attempts
-        if ($attempt) {
-            $newAttempts = $attempt->attempts + 1;
-            $locked = $newAttempts >= 5 ? now()->addMinutes(3) : null;
-            DB::table('login_attempts')
-                ->where('id', $attempt->id)
-                ->update(['attempts' => $newAttempts, 'locked_until' => $locked, 'last_attempt' => now()]);
-        } else {
-            DB::table('login_attempts')->insert([
-                'ip_address' => $ip,
-                'email' => $request->email,
-                'attempts' => 1,
-                'last_attempt' => now(),
-            ]);
-        }
+        RateLimiter::hit($throttleKey, 180); // lock for 3 minutes after 5 fails
 
         return back()->withErrors(['email' => 'Email atau password salah.'])->withInput();
     }
@@ -75,3 +52,4 @@ class AuthController extends Controller
         return redirect()->route('login');
     }
 }
+

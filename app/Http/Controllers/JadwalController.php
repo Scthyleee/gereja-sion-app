@@ -60,7 +60,7 @@ class JadwalController extends Controller
     public function show(JadwalIbadah $jadwal)
     {
         $jadwal->load('petugas.petugas', 'kantong.kodeAkun', 'amplop.detail.kodeAkun', 'amplop.warga');
-        $petugasList = Petugas::where('status', 'active')->orderBy('nama_petugas')->get();
+        $petugasList = Petugas::with('roles')->where('status', 'active')->orderBy('nama_petugas')->get();
         $akunKolekte = KodeAkun::kolekte()->where('aktif', true)->orderBy('kode')->get();
 
         // PS jenis from jenis_ps_config instead of Domain UP
@@ -545,8 +545,14 @@ class JadwalController extends Controller
     {
         $request->validate([
             'jenis_tugas' => 'required|string|max:50',
-            'insentif' => 'required|numeric|min:0',
         ]);
+
+        // Check if already has this role
+        $exists = PetugasRole::where('petugas_id', $petugas->id_petugas)
+            ->where('jenis_tugas', $request->jenis_tugas)->exists();
+        if ($exists) {
+            return back()->with('warning', "Petugas sudah memiliki tugas '{$request->jenis_tugas}'.");
+        }
 
         PetugasRole::create([
             'petugas_id' => $petugas->id_petugas,
@@ -554,13 +560,21 @@ class JadwalController extends Controller
             'berlaku_mulai' => now()->toDateString(),
         ]);
 
-        return back()->with('success', "Role '{$request->jenis_tugas}' berhasil ditambahkan.");
+        return back()->with('success', "Tugas '{$request->jenis_tugas}' berhasil ditambahkan.");
     }
 
     public function deletePetugasRole(PetugasRole $role)
     {
         $role->delete();
         return back()->with('success', 'Role berhasil dihapus.');
+    }
+
+    public function deleteRoleByName(Request $request, Petugas $petugas)
+    {
+        PetugasRole::where('petugas_id', $petugas->id_petugas)
+            ->where('jenis_tugas', $request->jenis_tugas)
+            ->delete();
+        return back()->with('success', "Tugas '{$request->jenis_tugas}' berhasil dihapus.");
     }
 
     // --- INSENTIF TAB ---

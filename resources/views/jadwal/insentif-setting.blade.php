@@ -2,6 +2,14 @@
 @section('title', 'Setting Insentif')
 
 @section('content')
+{{-- Tabs --}}
+<ul class="nav nav-pills mb-4" style="gap:8px">
+    <li class="nav-item"><a href="{{ route('jadwal.index') }}" class="nav-link" style="color:var(--text)"><i class="fas fa-calendar-alt me-1"></i>Jadwal</a></li>
+    <li class="nav-item"><a href="{{ route('insentif.index') }}" class="nav-link" style="color:var(--text)"><i class="fas fa-money-bill me-1"></i>Insentif</a></li>
+    <li class="nav-item"><a href="{{ route('petugas.index') }}" class="nav-link" style="color:var(--text)"><i class="fas fa-users-cog me-1"></i>Petugas</a></li>
+    <li class="nav-item"><a href="{{ route('insentif.setting') }}" class="nav-link active" style="background:linear-gradient(135deg,var(--primary),var(--primary-dark));border:none"><i class="fas fa-cog me-1"></i>Setting Insentif</a></li>
+</ul>
+
 <div class="content-card mb-4">
     <div class="content-card__header d-flex justify-content-between align-items-center">
         <h6 class="mb-0"><i class="fas fa-cog me-2"></i>Setting Biaya Insentif per Event & Tugas</h6>

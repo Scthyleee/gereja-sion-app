@@ -7,7 +7,6 @@
     <li class="nav-item"><a href="{{ route('jadwal.index') }}" class="nav-link" style="color:var(--text)"><i class="fas fa-calendar-alt me-1"></i>Jadwal</a></li>
     <li class="nav-item"><a href="{{ route('insentif.index', ['bulan' => $bulan, 'tahun' => $tahun]) }}" class="nav-link active" style="background:linear-gradient(135deg,var(--primary),var(--primary-dark));border:none"><i class="fas fa-money-bill me-1"></i>Insentif</a></li>
     <li class="nav-item"><a href="{{ route('petugas.index') }}" class="nav-link" style="color:var(--text)"><i class="fas fa-users-cog me-1"></i>Petugas</a></li>
-    <li class="nav-item"><a href="{{ route('insentif.setting') }}" class="nav-link" style="color:var(--text)"><i class="fas fa-cog me-1"></i>Setting Insentif</a></li>
 </ul>
 
 {{-- Filter --}}

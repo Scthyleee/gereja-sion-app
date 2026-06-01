@@ -18,8 +18,7 @@
 /public/storage
 /storage/*.key
 /storage/pail
-# vendor sengaja TIDAK diabaikan agar Railway deployment lebih reliable
-# /vendor
+/vendor
 Homestead.json
 Homestead.yaml
 Thumbs.db
