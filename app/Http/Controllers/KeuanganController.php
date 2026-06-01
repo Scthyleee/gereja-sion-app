@@ -100,18 +100,69 @@ class KeuanganController extends Controller
     {
         $bulan = $request->get('bulan', date('n'));
         $tahun = $request->get('tahun', date('Y'));
-        $tipe = $request->get('tipe', 'semua');
+        $tipe  = $request->get('tipe', 'semua');
 
-        $query = Transaksi::with('kodeAkun', 'pembuatUser', 'creator')
+        // === Transaksi umum ===
+        $qTransaksi = Transaksi::with('kodeAkun', 'pembuatUser', 'creator')
             ->where('tahun', $tahun)
             ->where('bulan', $bulan);
+        if ($tipe !== 'semua') $qTransaksi->where('tipe', $tipe);
+        $transaksiRows = $qTransaksi->orderByDesc('tanggal')->get()
+            ->map(fn($t) => (object)[
+                'source'      => 'transaksi',
+                'id'          => $t->id,
+                'tanggal'     => $t->tanggal,
+                'kode'        => $t->kodeAkun?->kode ?? '-',
+                'keterangan'  => $t->keterangan ?: ($t->kodeAkun?->keterangan ?: $t->kodeAkun?->nama),
+                'tipe'        => $t->tipe,
+                'jumlah'      => $t->jumlah,
+                'creator'     => $t->creator?->nama ?? '-',
+                'status'      => $t->status,
+                'raw'         => $t,
+            ]);
 
-        if ($tipe !== 'semua') $query->where('tipe', $tipe);
+        // === Transaksi PS ===
+        if ($tipe !== 'pengeluaran') {
+            $psRows = \App\Models\TransaksiPS::with('kodeAkun', 'jemaat', 'creator')
+                ->whereYear('tanggal', $tahun)
+                ->whereMonth('tanggal', $bulan)
+                ->orderByDesc('tanggal')
+                ->get()
+                ->map(fn($ps) => (object)[
+                    'source'      => 'ps',
+                    'id'          => $ps->id,
+                    'tanggal'     => $ps->tanggal,
+                    'kode'        => $ps->kodeAkun?->kode ?? 'PS',
+                    'keterangan'  => 'PS: ' . $ps->jenis_ps . ' — ' . $ps->no_kuitansi,
+                    'tipe'        => 'penerimaan',
+                    'jumlah'      => $ps->jumlah,
+                    'creator'     => $ps->creator?->nama ?? '-',
+                    'status'      => $ps->status,
+                    'raw'         => $ps,
+                ]);
+        } else {
+            $psRows = collect();
+        }
 
-        $transaksi = $query->orderByDesc('tanggal')->paginate(20)->withQueryString();
+        // Merge & sort by tanggal desc
+        $allRows = $transaksiRows->concat($psRows)
+            ->sortByDesc('tanggal')
+            ->values();
 
+        // Manual pagination
+        $perPage = 20;
+        $page    = $request->get('page', 1);
+        $items   = $allRows->forPage($page, $perPage);
+        $transaksi = new \Illuminate\Pagination\LengthAwarePaginator(
+            $items, $allRows->count(), $perPage, $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        // Summary (transaksi table only + PS penerimaan)
+        $sumTransaksi = Transaksi::where('tahun', $tahun)->where('bulan', $bulan);
+        $sumPS = \App\Models\TransaksiPS::whereYear('tanggal', $tahun)->whereMonth('tanggal', $bulan)->sum('jumlah');
         $summary = [
-            'penerimaan' => Transaksi::where('tahun', $tahun)->where('bulan', $bulan)->where('tipe', 'penerimaan')->sum('jumlah'),
+            'penerimaan' => Transaksi::where('tahun', $tahun)->where('bulan', $bulan)->where('tipe', 'penerimaan')->sum('jumlah') + $sumPS,
             'pengeluaran' => Transaksi::where('tahun', $tahun)->where('bulan', $bulan)->where('tipe', 'pengeluaran')->sum('jumlah'),
         ];
 

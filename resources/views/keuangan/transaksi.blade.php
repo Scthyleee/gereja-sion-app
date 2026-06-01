@@ -77,6 +77,7 @@
                 <thead>
                     <tr>
                         <th style="width:100px">Tanggal</th>
+                        <th style="width:50px">Sumber</th>
                         <th style="width:140px">Kode Akun</th>
                         <th>Keterangan</th>
                         <th style="width:80px">Tipe</th>
@@ -89,9 +90,16 @@
                 <tbody>
                     @forelse($transaksi as $t)
                     <tr>
-                        <td class="small">{{ $t->tanggal->format('d/m/Y') }}</td>
-                        <td class="small"><code class="text-primary">{{ $t->kodeAkun->kode }}</code></td>
-                        <td class="small">{{ $t->keterangan ?: ($t->kodeAkun->keterangan ?: $t->kodeAkun->nama) }}</td>
+                        <td class="small">{{ \Carbon\Carbon::parse($t->tanggal)->format('d/m/Y') }}</td>
+                        <td>
+                            @if($t->source === 'ps')
+                                <span class="badge bg-purple" style="background:#7c3aed;font-size:.65rem" title="Persembahan Syukur">PS</span>
+                            @else
+                                <span class="badge bg-secondary" style="font-size:.65rem">KAS</span>
+                            @endif
+                        </td>
+                        <td class="small"><code class="text-primary">{{ $t->kode }}</code></td>
+                        <td class="small">{{ $t->keterangan }}</td>
                         <td>
                             <span class="badge bg-{{ $t->tipe === 'penerimaan' ? 'success' : 'danger' }}">
                                 {{ $t->tipe === 'penerimaan' ? 'Masuk' : 'Keluar' }}
@@ -100,30 +108,37 @@
                         <td class="text-end fw-semibold {{ $t->tipe === 'penerimaan' ? 'text-success' : 'text-danger' }}">
                             Rp {{ number_format($t->jumlah, 0, ',', '.') }}
                         </td>
-                        <td class="small text-muted">{{ $t->creator?->nama ?? '-' }}</td>
+                        <td class="small text-muted">{{ $t->creator }}</td>
                         <td>
                             <span class="badge bg-{{ $t->status === 'approved' ? 'success' : ($t->status === 'verified' ? 'info' : 'warning') }}">
                                 {{ ucfirst($t->status) }}
                             </span>
                         </td>
-                        <td class="d-flex gap-1">
-                            <a href="{{ route('print.kwitansi', $t) }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Cetak Kwitansi"><i class="fas fa-receipt"></i></a>
-                            @if(auth()->user()->canEdit('transaksi'))
-                            @if($t->status === 'draft')
-                            <form action="{{ route('keuangan.transaksi.verify', $t) }}" method="POST">
-                                @csrf
-                                <button class="btn btn-sm btn-outline-warning" title="Validasi"><i class="fas fa-check"></i></button>
-                            </form>
-                            @elseif($t->status === 'verified')
-                            <form action="{{ route('keuangan.transaksi.approve', $t) }}" method="POST">
-                                @csrf
-                                <button class="btn btn-sm btn-outline-info" title="Approve"><i class="fas fa-check-double"></i></button>
-                            </form>
-                            @endif
-                            <form action="{{ route('keuangan.transaksi.destroy', $t) }}" method="POST" onsubmit="return confirm('Hapus transaksi ini?')">
-                                @csrf @method('DELETE')
-                                <button class="btn btn-sm btn-outline-danger" title="Hapus"><i class="fas fa-trash"></i></button>
-                            </form>
+                        <td>
+                            @if($t->source === 'transaksi')
+                                <div class="d-flex gap-1">
+                                    <a href="{{ route('print.kwitansi', $t->id) }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Cetak Kwitansi"><i class="fas fa-receipt"></i></a>
+                                    @if(auth()->user()->canEdit('transaksi') ?? true)
+                                    @if($t->status === 'draft')
+                                    <form action="{{ route('keuangan.transaksi.verify', $t->id) }}" method="POST">
+                                        @csrf
+                                        <button class="btn btn-sm btn-outline-warning" title="Validasi"><i class="fas fa-check"></i></button>
+                                    </form>
+                                    @elseif($t->status === 'verified')
+                                    <form action="{{ route('keuangan.transaksi.approve', $t->id) }}" method="POST">
+                                        @csrf
+                                        <button class="btn btn-sm btn-outline-info" title="Approve"><i class="fas fa-check-double"></i></button>
+                                    </form>
+                                    @endif
+                                    <form action="{{ route('keuangan.transaksi.destroy', $t->id) }}" method="POST" onsubmit="return confirm('Hapus transaksi ini?')">
+                                        @csrf @method('DELETE')
+                                        <button class="btn btn-sm btn-outline-danger" title="Hapus"><i class="fas fa-trash"></i></button>
+                                    </form>
+                                    @endif
+                                </div>
+                            @else
+                                {{-- PS: link ke halaman PS --}}
+                                <a href="{{ route('ps.index') }}" class="btn btn-sm btn-outline-secondary" title="Lihat di fitur PS"><i class="fas fa-external-link-alt"></i></a>
                             @endif
                         </td>
                     </tr>
@@ -138,6 +153,7 @@
     <div class="content-card__body border-top py-2 px-3">{{ $transaksi->links('pagination::bootstrap-5') }}</div>
     @endif
 </div>
+
 
 {{-- Modal Tambah --}}
 <div class="modal fade" id="modalTambah" tabindex="-1">
