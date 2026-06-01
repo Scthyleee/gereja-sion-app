@@ -371,7 +371,7 @@ class JadwalController extends Controller
         DB::transaction(function () use ($jadwal) {
             // SAFETY: Delete any existing auto-generated transactions for this jadwal
             // This prevents duplicates if user unfinalizes and re-finalizes
-            Transaksi::where('jadwal_ibadah_id', $jadwal->id)->delete();
+            Transaksi::where('jadwal_ibadah_id', $jadwal->id_jadwal)->delete();
 
             // Kantong → transaksi
             foreach ($jadwal->kantong as $k) {
@@ -442,7 +442,7 @@ class JadwalController extends Controller
                     'jumlah'         => $jp->nominal_insentif,
                     'keterangan'     => "Insentif {$namaPetugas} ({$jenisTugas}) — {$jadwal->jenis_ibadah}",
                     'jenis_ibadah'   => $jadwal->jenis_ibadah,
-                    'jadwal_ibadah_id' => $jadwal->id,
+                    'jadwal_ibadah_id' => $jadwal->id_jadwal,
                     'bulan'          => $jadwal->tanggal->month,
                     'tahun'          => $jadwal->tanggal->year,
                     'kantong_dana'   => 'rutin',
@@ -465,7 +465,7 @@ class JadwalController extends Controller
 
         DB::transaction(function () use ($jadwal) {
             // Delete ALL auto-generated transactions linked to this jadwal
-            Transaksi::where('jadwal_ibadah_id', $jadwal->id)->delete();
+            Transaksi::where('jadwal_ibadah_id', $jadwal->id_jadwal)->delete();
             // Also delete PS records generated from jadwal finalize
             TransaksiPS::where('jadwal_ibadah_id', $jadwal->id_jadwal)->where('sumber', 'jadwal')->delete();
 
@@ -494,7 +494,7 @@ class JadwalController extends Controller
             'jumlah' => $jumlah,
             'keterangan' => $ket . " — {$jadwal->jenis_ibadah}",
             'jenis_ibadah' => $jadwal->jenis_ibadah,
-            'jadwal_ibadah_id' => $jadwal->id,
+            'jadwal_ibadah_id' => $jadwal->id_jadwal,
             'bulan' => $jadwal->tanggal->month,
             'tahun' => $jadwal->tanggal->year,
             'kantong_dana' => $kantong,
