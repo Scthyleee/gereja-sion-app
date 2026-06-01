@@ -71,7 +71,12 @@
 <div class="content-card">
     <div class="content-card__header d-flex justify-content-between align-items-center">
         <h6 class="mb-0"><i class="fas fa-list me-2"></i>Daftar Kode Akun</h6>
-        <span class="badge bg-secondary">{{ $akun->total() }} akun</span>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-secondary">{{ $akun->total() }} akun</span>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalTambahAkun">
+                <i class="fas fa-plus me-1"></i>Tambah Akun
+            </button>
+        </div>
     </div>
     <div class="content-card__body p-0">
         <div class="table-responsive">
@@ -81,9 +86,10 @@
                         <th style="width:180px">Kode</th>
                         <th>Nama</th>
                         <th style="width:100px">Tipe</th>
-                        <th style="width:100px">UP</th>
+                        <th style="width:80px">UP</th>
                         <th style="width:100px">Kategori</th>
                         <th>Sumber Lapangan</th>
+                        <th style="width:90px">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -113,9 +119,21 @@
                             @endif
                         </td>
                         <td class="text-muted small">{{ Str::limit($a->sumber_lapangan, 60) }}</td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-outline-secondary btn-sm" title="Edit"
+                                    onclick="editAkun({{ $a->id }}, '{{ addslashes($a->kode) }}', '{{ addslashes($a->nama) }}', '{{ $a->tipe }}', {{ $a->nomor_up }}, '{{ $a->kategori_akun }}', '{{ addslashes($a->sumber_lapangan ?? '') }}', '{{ addslashes($a->keterangan ?? '') }}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <form action="{{ route('keuangan.akun.destroy', $a) }}" method="POST" onsubmit="return confirm('Nonaktifkan kode akun {{ $a->kode }}?')">
+                                    @csrf @method('DELETE')
+                                    <button class="btn btn-outline-danger btn-sm" title="Nonaktifkan"><i class="fas fa-ban"></i></button>
+                                </form>
+                            </div>
+                        </td>
                     </tr>
                     @empty
-                    <tr><td colspan="6" class="text-center text-muted py-4">Tidak ada data ditemukan</td></tr>
+                    <tr><td colspan="7" class="text-center text-muted py-4">Tidak ada data ditemukan</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -128,4 +146,144 @@
     </div>
     @endif
 </div>
+
+{{-- Modal Tambah Kode Akun --}}
+<div class="modal fade" id="modalTambahAkun" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content" style="background:var(--bg-card);color:var(--text);border:1px solid var(--border)">
+            <div class="modal-header" style="border-color:var(--border)">
+                <h5 class="modal-title fw-bold"><i class="fas fa-plus me-2"></i>Tambah Kode Akun</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ route('keuangan.akun.store') }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Kode Akun <span class="text-danger">*</span></label>
+                            <input type="text" name="kode" class="form-control" placeholder="Contoh: I(APn).01.01h" required>
+                            <small class="text-muted">Kode harus unik dan belum digunakan</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Parent Kode</label>
+                            <input type="text" name="parent_kode" class="form-control" placeholder="Kosongkan jika akun utama">
+                            <small class="text-muted">Isi jika ini sub-akun dari akun lain</small>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Nama Akun <span class="text-danger">*</span></label>
+                            <input type="text" name="nama" class="form-control" placeholder="Nama kode akun" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Tipe <span class="text-danger">*</span></label>
+                            <select name="tipe" class="form-select" required>
+                                <option value="penerimaan">Penerimaan</option>
+                                <option value="pengeluaran">Pengeluaran</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Unit Pelayanan <span class="text-danger">*</span></label>
+                            <select name="nomor_up" class="form-select" required>
+                                @foreach($units as $u)
+                                    <option value="{{ $u->nomor_up }}">{{ sprintf('%02d', $u->nomor_up) }} — {{ $u->inisial }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Kategori <span class="text-danger">*</span></label>
+                            <select name="kategori_akun" class="form-select" required>
+                                <option value="mph">MPH</option>
+                                <option value="kategorial">Kategorial</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Sumber Lapangan</label>
+                            <input type="text" name="sumber_lapangan" class="form-control" placeholder="Contoh: kolekte, persembahan syukur, dll">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Keterangan</label>
+                            <textarea name="keterangan" class="form-control" rows="2" placeholder="Keterangan tambahan (opsional)"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-color:var(--border)">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Modal Edit Kode Akun --}}
+<div class="modal fade" id="modalEditAkun" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content" style="background:var(--bg-card);color:var(--text);border:1px solid var(--border)">
+            <div class="modal-header" style="border-color:var(--border)">
+                <h5 class="modal-title fw-bold"><i class="fas fa-edit me-2"></i>Edit Kode Akun — <span id="editKodeLabel"></span></h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formEditAkun" method="POST">
+                @csrf @method('PUT')
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Nama Akun <span class="text-danger">*</span></label>
+                            <input type="text" name="nama" id="editNama" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Tipe <span class="text-danger">*</span></label>
+                            <select name="tipe" id="editTipe" class="form-select" required>
+                                <option value="penerimaan">Penerimaan</option>
+                                <option value="pengeluaran">Pengeluaran</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Unit Pelayanan</label>
+                            <select name="nomor_up" id="editNomorUp" class="form-select">
+                                @foreach($units as $u)
+                                    <option value="{{ $u->nomor_up }}">{{ sprintf('%02d', $u->nomor_up) }} — {{ $u->inisial }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Kategori <span class="text-danger">*</span></label>
+                            <select name="kategori_akun" id="editKategori" class="form-select" required>
+                                <option value="mph">MPH</option>
+                                <option value="kategorial">Kategorial</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Sumber Lapangan</label>
+                            <input type="text" name="sumber_lapangan" id="editSumber" class="form-control">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Keterangan</label>
+                            <textarea name="keterangan" id="editKeterangan" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-color:var(--border)">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+function editAkun(id, kode, nama, tipe, nomorUp, kategori, sumber, keterangan) {
+    document.getElementById('editKodeLabel').textContent = kode;
+    document.getElementById('editNama').value = nama;
+    document.getElementById('editTipe').value = tipe;
+    document.getElementById('editNomorUp').value = nomorUp;
+    document.getElementById('editKategori').value = kategori;
+    document.getElementById('editSumber').value = sumber;
+    document.getElementById('editKeterangan').value = keterangan;
+    document.getElementById('formEditAkun').action = '/admin/keuangan/master-akun/' + id;
+    new bootstrap.Modal(document.getElementById('modalEditAkun')).show();
+}
+</script>
+@endpush
 @endsection

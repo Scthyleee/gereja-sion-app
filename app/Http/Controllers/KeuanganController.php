@@ -41,6 +41,59 @@ class KeuanganController extends Controller
         return view('keuangan.master-akun', compact('akun', 'units', 'stats', 'tipe', 'up', 'search'));
     }
 
+    public function storeKodeAkun(Request $request)
+    {
+        $request->validate([
+            'kode'          => 'required|string|max:50|unique:kode_akun,kode',
+            'nama'          => 'required|string|max:200',
+            'tipe'          => 'required|in:penerimaan,pengeluaran',
+            'nomor_up'      => 'required|integer',
+            'kategori_akun' => 'required|in:mph,kategorial',
+        ]);
+
+        KodeAkun::create([
+            'kode'           => $request->kode,
+            'parent_kode'    => $request->parent_kode ?: null,
+            'nama'           => $request->nama,
+            'tipe'           => $request->tipe,
+            'nomor_up'       => $request->nomor_up,
+            'nomor_menu'     => $request->nomor_menu ?? 1,
+            'keterangan'     => $request->keterangan,
+            'sumber_lapangan'=> $request->sumber_lapangan,
+            'kategori_akun'  => $request->kategori_akun,
+            'aktif'          => true,
+        ]);
+
+        return back()->with('success', "Kode akun {$request->kode} berhasil ditambahkan.");
+    }
+
+    public function updateKodeAkun(Request $request, KodeAkun $kodeAkun)
+    {
+        $request->validate([
+            'nama'          => 'required|string|max:200',
+            'tipe'          => 'required|in:penerimaan,pengeluaran',
+            'kategori_akun' => 'required|in:mph,kategorial',
+        ]);
+
+        $kodeAkun->update([
+            'nama'           => $request->nama,
+            'tipe'           => $request->tipe,
+            'nomor_up'       => $request->nomor_up ?? $kodeAkun->nomor_up,
+            'keterangan'     => $request->keterangan,
+            'sumber_lapangan'=> $request->sumber_lapangan,
+            'kategori_akun'  => $request->kategori_akun,
+        ]);
+
+        return back()->with('success', "Kode akun {$kodeAkun->kode} berhasil diupdate.");
+    }
+
+    public function destroyKodeAkun(KodeAkun $kodeAkun)
+    {
+        // Soft-deactivate only (do not delete — may have linked transaksi)
+        $kodeAkun->update(['aktif' => false]);
+        return back()->with('success', "Kode akun {$kodeAkun->kode} dinonaktifkan.");
+    }
+
     // --- Transaksi ---
     public function transaksi(Request $request)
     {

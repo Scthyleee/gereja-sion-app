@@ -47,6 +47,9 @@ Route::middleware(['auth', 'page.access'])->prefix('admin')->group(function () {
     // Keuangan
     Route::get('/keuangan', [KeuanganController::class, 'index'])->name('keuangan.index');
     Route::get('/keuangan/master-akun', [KeuanganController::class, 'masterAkun'])->name('keuangan.master');
+    Route::post('/keuangan/master-akun', [KeuanganController::class, 'storeKodeAkun'])->name('keuangan.akun.store');
+    Route::put('/keuangan/master-akun/{kodeAkun}', [KeuanganController::class, 'updateKodeAkun'])->name('keuangan.akun.update');
+    Route::delete('/keuangan/master-akun/{kodeAkun}', [KeuanganController::class, 'destroyKodeAkun'])->name('keuangan.akun.destroy');
     Route::get('/keuangan/transaksi', [KeuanganController::class, 'transaksi'])->name('keuangan.transaksi');
     Route::post('/keuangan/transaksi', [KeuanganController::class, 'storeTransaksi'])->name('keuangan.transaksi.store');
     Route::delete('/keuangan/transaksi/{transaksi}', [KeuanganController::class, 'destroyTransaksi'])->name('keuangan.transaksi.destroy');
