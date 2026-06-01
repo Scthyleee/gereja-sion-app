@@ -3,7 +3,7 @@
 
 @section('content')
 <ul class="nav nav-pills mb-4" style="gap:8px">
-    @foreach(['hero' => ['fas fa-home', 'Hero & Tampilan'], 'pengumuman' => ['fas fa-bullhorn', 'Pengumuman'], 'ayat' => ['fas fa-book-open', 'Ayat Harian'], 'galeri' => ['fas fa-images', 'Galeri'], 'livestream' => ['fas fa-video', 'Livestream'], 'seo' => ['fas fa-search', 'SEO & Footer'], 'visibility' => ['fas fa-eye', 'Visibilitas'], 'maintenance' => ['fas fa-tools', 'Maintenance']] as $t => $info)
+    @foreach(['hero' => ['fas fa-home', 'Hero & Tampilan'], 'pengumuman' => ['fas fa-bullhorn', 'Pengumuman'], 'ayat' => ['fas fa-book-open', 'Ayat Harian'], 'galeri' => ['fas fa-images', 'Galeri'], 'livestream' => ['fas fa-video', 'Livestream'], 'seo' => ['fas fa-search', 'SEO & Footer'], 'visibility' => ['fas fa-eye', 'Visibilitas']] as $t => $info)
     <li class="nav-item"><a href="{{ route('cms.index', ['tab'=>$t]) }}" class="nav-link {{ $tab===$t ? 'active' : '' }}" style="{{ $tab===$t ? 'background:linear-gradient(135deg,var(--primary),var(--primary-dark));border:none' : 'color:var(--text)' }}"><i class="{{ $info[0] }} me-1"></i>{{ $info[1] }}</a></li>
     @endforeach
 </ul>

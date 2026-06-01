@@ -294,28 +294,34 @@ class SettingsController extends Controller
     // --- MAINTENANCE MODE (CMS-based) ---
     public function toggleMaintenance(Request $request)
     {
-        $currentVal = DB::table('cms_settings')->where('key', 'maintenance_public')->value('value') ?? '0';
+        $tipe = $request->input('tipe', 'public'); // 'public' or 'admin'
+        $mainKey = "maintenance_{$tipe}";
+        $durasiKey = "maintenance_{$tipe}_durasi";
+        $startKey = "maintenance_{$tipe}_start";
+
+        $currentVal = DB::table('cms_settings')->where('key', $mainKey)->value('value') ?? '0';
         $newVal = $currentVal === '1' ? '0' : '1';
 
         DB::table('cms_settings')->updateOrInsert(
-            ['key' => 'maintenance_public'],
+            ['key' => $mainKey],
             ['value' => $newVal, 'type' => 'boolean', 'updated_at' => now()]
         );
 
-        // Save duration if activating
+        $label = $tipe === 'admin' ? 'Admin Panel' : 'Public Page';
+
         if ($newVal === '1') {
             $durasi = max(1, (int)$request->input('durasi', 2));
             DB::table('cms_settings')->updateOrInsert(
-                ['key' => 'maintenance_durasi'],
+                ['key' => $durasiKey],
                 ['value' => (string)$durasi, 'type' => 'text', 'updated_at' => now()]
             );
             DB::table('cms_settings')->updateOrInsert(
-                ['key' => 'maintenance_start'],
+                ['key' => $startKey],
                 ['value' => now()->toIso8601String(), 'type' => 'text', 'updated_at' => now()]
             );
-            return redirect()->route('settings.index', ['tab' => 'website'])->with('warning', "Maintenance mode AKTIF selama {$durasi} jam. Public page tidak bisa diakses.");
+            return redirect()->route('settings.index', ['tab' => 'website'])->with('warning', "Maintenance {$label} AKTIF selama {$durasi} jam.");
         }
 
-        return redirect()->route('settings.index', ['tab' => 'website'])->with('success', 'Website sudah ONLINE kembali.');
+        return redirect()->route('settings.index', ['tab' => 'website'])->with('success', "{$label} sudah ONLINE kembali.");
     }
 }

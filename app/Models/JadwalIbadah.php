@@ -14,7 +14,7 @@ class JadwalIbadah extends Model
         'pendaftaran_nikah_id', 'pendaftaran_baptis_id',
         'penanggung_jawab', 'contact_person', 'no_telepon_cp',
         'jam_selesai', 'dress_code', 'tema_ibadah', 'ayat_khotbah', 'foto_ttd_path',
-        'judul_ibadah',
+        'judul_ibadah', 'kode_akun_insentif_id',
     ];
     protected $casts = ['tanggal' => 'date'];
 

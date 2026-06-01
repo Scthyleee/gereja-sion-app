@@ -161,10 +161,24 @@
                     @endif
                 </table>
             </div>
-            {{-- Kode Akun Insentif info --}}
+            {{-- Kode Akun Insentif selector --}}
             @if($jadwal->petugas->where('kategori','insentif')->count() > 0)
             <div class="content-card__body border-top pt-2 pb-2" style="border-color:var(--border)!important">
-                <small class="text-muted"><i class="fas fa-info-circle me-1"></i>Saat finalisasi, insentif akan dibebankan ke kode akun <code>II(APg).01.01</code> (Honor/Insentif Petugas).</small>
+                <form action="{{ route('jadwal.update', $jadwal) }}" method="POST" class="d-flex align-items-center gap-2 flex-wrap">
+                    @csrf @method('PUT')
+                    <input type="hidden" name="tanggal" value="{{ $jadwal->tanggal->format('Y-m-d') }}">
+                    <input type="hidden" name="jenis_ibadah" value="{{ $jadwal->jenis_ibadah }}">
+                    <small class="fw-semibold text-muted"><i class="fas fa-book me-1"></i>Kode Akun Insentif:</small>
+                    <select name="kode_akun_insentif_id" class="form-select form-select-sm" style="width:auto;max-width:400px">
+                        @foreach($akunInsentif as $ai)
+                            <option value="{{ $ai->id }}" {{ $jadwal->kode_akun_insentif_id == $ai->id ? 'selected' : '' }}>
+                                {{ $ai->kode }} — {{ Str::limit($ai->nama, 50) }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <button class="btn btn-sm btn-outline-primary"><i class="fas fa-save"></i></button>
+                    <small class="text-muted">Pilih kode akun untuk insentif saat finalisasi</small>
+                </form>
             </div>
             @endif
         </div>

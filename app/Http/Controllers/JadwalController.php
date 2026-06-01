@@ -82,6 +82,19 @@ class JadwalController extends Controller
             ->where('aktif', true)
             ->get();
 
+        // All insentif configs (for auto-nominal JS lookup)
+        $allInsentifConfig = DB::table('insentif_config')->where('aktif', true)->get();
+
+        // Kode akun for insentif (pengeluaran containing 'insentif' or 'honor')
+        $akunInsentif = KodeAkun::where('tipe', 'pengeluaran')
+            ->where('aktif', true)
+            ->where(function($q) {
+                $q->where('nama', 'like', '%insentif%')
+                  ->orWhere('nama', 'like', '%honor%');
+            })
+            ->orderBy('kode')
+            ->get();
+
         // Quota check
         $quota = DB::table('system_settings')->where('setting_key', 'petugas_quota_per_bulan')->value('setting_value') ?? 4;
         $bulan = $jadwal->tanggal->month;
@@ -94,7 +107,7 @@ class JadwalController extends Controller
         return view('jadwal.show', compact(
             'jadwal', 'petugasList', 'akunKolekte', 'jenisPS', 'wargaList',
             'slotTemplates', 'quota', 'petugasCount', 'diakonPenetuaList',
-            'insentifConfig', 'tipeEvent'
+            'insentifConfig', 'tipeEvent', 'akunInsentif', 'allInsentifConfig'
         ));
     }
 
@@ -113,7 +126,7 @@ class JadwalController extends Controller
 
     public function update(Request $request, JadwalIbadah $jadwal)
     {
-        $jadwal->update($request->only('tanggal', 'jenis_ibadah', 'judul_ibadah', 'waktu', 'lokasi', 'keterangan', 'jumlah_hadir', 'tema_ibadah', 'ayat_khotbah'));
+        $jadwal->update($request->only('tanggal', 'jenis_ibadah', 'judul_ibadah', 'waktu', 'lokasi', 'keterangan', 'jumlah_hadir', 'tema_ibadah', 'ayat_khotbah', 'kode_akun_insentif_id'));
         return back()->with('success', 'Jadwal berhasil diupdate.');
     }
 
@@ -415,8 +428,9 @@ class JadwalController extends Controller
             // Insentif → transaksi pengeluaran (only petugas with insentif > 0)
             $totalInsentif = $jadwal->petugas->where('kategori', 'insentif')->sum('nominal_insentif');
             if ($totalInsentif > 0) {
-                // Always use default II(APg).01.01
-                $akunInsentifId = KodeAkun::where('kode', 'II(APg).01.01')->value('id');
+                // Use jadwal's selected kode_akun_insentif_id, fallback to II(APg).01.01
+                $akunInsentifId = $jadwal->kode_akun_insentif_id
+                    ?? KodeAkun::where('kode', 'II(APg).01.01')->value('id');
                 if ($akunInsentifId) {
                     Transaksi::create([
                         'tanggal' => $jadwal->tanggal,
@@ -493,7 +507,9 @@ class JadwalController extends Controller
         $petugas = Petugas::with('warga', 'roles')->orderBy('nama_petugas')->get();
         $wargaList = WargaJemaat::where('status_jemaat', 'aktif')->orderBy('nama_lengkap')->get();
         $insentifConfigs = \App\Models\InsentifConfig::where('aktif', true)->orderBy('jenis_tugas')->get();
-        return view('jadwal.petugas', compact('petugas', 'wargaList', 'insentifConfigs'));
+        // Unique jenis_tugas for "Tambah Petugas" dropdown (avoid duplicates like 3x Organis)
+        $jenisTugasList = $insentifConfigs->pluck('jenis_tugas')->unique()->values();
+        return view('jadwal.petugas', compact('petugas', 'wargaList', 'insentifConfigs', 'jenisTugasList'));
     }
 
     public function storePetugasMaster(Request $request)

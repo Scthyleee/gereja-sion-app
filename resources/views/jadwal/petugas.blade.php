@@ -106,8 +106,8 @@
                     <div class="mb-3"><label class="form-label fw-semibold">Job / Tugas Pertama</label>
                         <select name="jenis_tugas" class="form-select">
                             <option value="">-- Tambah nanti --</option>
-                            @foreach($insentifConfigs as $ic)
-                                <option>{{ $ic->jenis_tugas }}</option>
+                            @foreach($jenisTugasList as $jt)
+                                <option>{{ $jt }}</option>
                             @endforeach
                         </select>
                         <small class="text-muted">Pilih dari daftar jenis tugas, atau bisa ditambah nanti di Detail.</small>

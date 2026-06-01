@@ -322,7 +322,7 @@
 </div>
 
 @elseif($tab === 'website')
-{{-- Website / Maintenance Mode (CMS-based) --}}
+{{-- Website / Maintenance Mode --}}
 <div class="content-card">
     <div class="content-card__header"><h6 class="mb-0"><i class="fas fa-tools me-2"></i>Mode Maintenance</h6></div>
     <div class="content-card__body">
@@ -332,66 +332,63 @@
         </div>
 
         <div class="row g-4 mt-2">
-            <div class="col-md-7">
+            {{-- PUBLIC PAGE --}}
+            <div class="col-md-6">
                 <div class="p-4 rounded" style="border:1px solid var(--border);background:rgba(0,0,0,.15)">
                     <h6 class="fw-bold mb-3"><i class="fas fa-globe me-2"></i>Public Page</h6>
-
                     @if(($cmsSettings['maintenance_public'] ?? '0') === '1')
-                    {{-- Maintenance is ON --}}
                     <div class="p-3 rounded mb-3" style="background:rgba(255,152,0,.1);border:1px solid rgba(255,152,0,.2)">
                         <div class="d-flex align-items-center gap-2 mb-2">
                             <span style="width:10px;height:10px;border-radius:50%;background:#ff9800;display:inline-block;animation:pulse 1.5s infinite"></span>
-                            <strong style="color:var(--warning)">Maintenance Mode AKTIF</strong>
+                            <strong style="color:var(--warning)">Maintenance AKTIF</strong>
                             <span class="badge bg-danger ms-1">AKTIF</span>
                         </div>
-                        @if(isset($cmsSettings['maintenance_durasi']) && isset($cmsSettings['maintenance_start']))
-                            @php
-                                $startTime = \Carbon\Carbon::parse($cmsSettings['maintenance_start']);
-                                $durasi = (int)$cmsSettings['maintenance_durasi'];
-                                $endTime = $startTime->copy()->addHours($durasi);
-                                $elapsed = now()->diffForHumans($startTime, true);
-                                $remaining = now()->lt($endTime) ? now()->diffForHumans($endTime, true) : 'Sudah melebihi durasi';
-                            @endphp
-                            <div class="small text-muted mt-2">
-                                <div><i class="fas fa-clock me-1"></i>Dimulai: {{ $startTime->format('d M Y H:i') }}</div>
-                                <div><i class="fas fa-hourglass-half me-1"></i>Durasi: {{ $durasi }} jam</div>
-                                <div><i class="fas fa-stopwatch me-1"></i>Berlangsung: {{ $elapsed }}</div>
-                                <div><i class="fas fa-hourglass-end me-1"></i>Sisa: {{ $remaining }}</div>
-                            </div>
+                        @if(isset($cmsSettings['maintenance_public_durasi']) && isset($cmsSettings['maintenance_public_start']))
+                        @php $ps = \Carbon\Carbon::parse($cmsSettings['maintenance_public_start']); $pd = (int)$cmsSettings['maintenance_public_durasi']; $pe = $ps->copy()->addHours($pd); @endphp
+                        <div class="small text-muted mt-2">
+                            <div><i class="fas fa-clock me-1"></i>Dimulai: {{ $ps->format('d M Y H:i') }}</div>
+                            <div><i class="fas fa-hourglass-half me-1"></i>Durasi: {{ $pd }} jam</div>
+                            <div><i class="fas fa-stopwatch me-1"></i>Berlangsung: {{ now()->diffForHumans($ps, true) }}</div>
+                            <div><i class="fas fa-hourglass-end me-1"></i>Sisa: {{ now()->lt($pe) ? now()->diffForHumans($pe, true) : 'Melebihi durasi' }}</div>
+                        </div>
                         @endif
-                        <p class="small text-muted mt-2 mb-0">Pengunjung melihat halaman maintenance. Klik tombol di bawah untuk mengaktifkan kembali.</p>
                     </div>
-                    <form action="{{ route('settings.maintenance') }}" method="POST">
-                        @csrf
-                        <button type="submit" class="btn btn-success"><i class="fas fa-power-off me-1"></i>Aktifkan Website (Go Online)</button>
-                    </form>
+                    <form action="{{ route('settings.maintenance') }}" method="POST">@csrf <input type="hidden" name="tipe" value="public"><button type="submit" class="btn btn-success btn-sm"><i class="fas fa-power-off me-1"></i>Go Online</button></form>
                     @else
-                    {{-- Website is Online --}}
-                    <div class="p-3 rounded mb-3" style="background:rgba(82,138,94,.08);border:1px solid rgba(82,138,94,.15)">
-                        <div class="d-flex align-items-center gap-2">
-                            <span style="width:10px;height:10px;border-radius:50%;background:#4caf50;display:inline-block"></span>
-                            <strong style="color:var(--success)">Website sedang Online</strong>
-                            <span class="badge bg-success ms-1">NORMAL</span>
-                        </div>
-                    </div>
-                    <form action="{{ route('settings.maintenance') }}" method="POST" class="d-flex align-items-end gap-3" id="formMaintenance">
-                        @csrf
-                        <div>
-                            <label class="form-label fw-semibold small">Durasi Maintenance (Jam)</label>
-                            <input type="number" name="durasi" class="form-control" value="2" min="1" max="72" style="width:120px">
-                        </div>
-                        <button type="button" class="btn btn-warning" id="btnMaintenance" onclick="confirmMaintenance(this)">
-                            <i class="fas fa-wrench me-1"></i>Aktifkan Maintenance
-                        </button>
-                    </form>
+                    <div class="p-3 rounded mb-3" style="background:rgba(82,138,94,.08);border:1px solid rgba(82,138,94,.15)"><div class="d-flex align-items-center gap-2"><span style="width:10px;height:10px;border-radius:50%;background:#4caf50;display:inline-block"></span><strong style="color:var(--success)">Online</strong><span class="badge bg-success ms-1">NORMAL</span></div></div>
+                    <form action="{{ route('settings.maintenance') }}" method="POST" class="d-flex align-items-end gap-2">@csrf <input type="hidden" name="tipe" value="public"><div><label class="form-label fw-semibold small mb-1">Durasi (Jam)</label><input type="number" name="durasi" class="form-control form-control-sm" value="2" min="1" max="72" style="width:90px"></div><button type="button" class="btn btn-warning btn-sm" onclick="if(confirm('Aktifkan Maintenance Public?')) this.closest('form').submit()"><i class="fas fa-wrench me-1"></i>Aktifkan</button></form>
                     @endif
+                    <small class="text-muted d-block mt-2">Jemaat akan melihat halaman maintenance.</small>
                 </div>
             </div>
-            <div class="col-md-5 text-center">
-                <div class="p-4" style="background:var(--bg);border-radius:16px">
-                    <i class="fas fa-server fa-3x mb-3" style="color:var(--primary);opacity:.5"></i>
-                    <p class="small text-muted mb-2">Saat maintenance aktif, pengunjung akan melihat halaman maintenance.</p>
-                    <p class="small text-muted mb-0"><strong>Super Admin</strong> tetap bisa mengakses semuanya.</p>
+
+            {{-- ADMIN PANEL --}}
+            <div class="col-md-6">
+                <div class="p-4 rounded" style="border:1px solid var(--border);background:rgba(0,0,0,.15)">
+                    <h6 class="fw-bold mb-3"><i class="fas fa-lock me-2"></i>Admin Panel (/admin)</h6>
+                    @if(($cmsSettings['maintenance_admin'] ?? '0') === '1')
+                    <div class="p-3 rounded mb-3" style="background:rgba(255,152,0,.1);border:1px solid rgba(255,152,0,.2)">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span style="width:10px;height:10px;border-radius:50%;background:#ff9800;display:inline-block;animation:pulse 1.5s infinite"></span>
+                            <strong style="color:var(--warning)">Maintenance AKTIF</strong>
+                            <span class="badge bg-danger ms-1">AKTIF</span>
+                        </div>
+                        @if(isset($cmsSettings['maintenance_admin_durasi']) && isset($cmsSettings['maintenance_admin_start']))
+                        @php $as = \Carbon\Carbon::parse($cmsSettings['maintenance_admin_start']); $ad = (int)$cmsSettings['maintenance_admin_durasi']; $ae = $as->copy()->addHours($ad); @endphp
+                        <div class="small text-muted mt-2">
+                            <div><i class="fas fa-clock me-1"></i>Dimulai: {{ $as->format('d M Y H:i') }}</div>
+                            <div><i class="fas fa-hourglass-half me-1"></i>Durasi: {{ $ad }} jam</div>
+                            <div><i class="fas fa-stopwatch me-1"></i>Berlangsung: {{ now()->diffForHumans($as, true) }}</div>
+                            <div><i class="fas fa-hourglass-end me-1"></i>Sisa: {{ now()->lt($ae) ? now()->diffForHumans($ae, true) : 'Melebihi durasi' }}</div>
+                        </div>
+                        @endif
+                    </div>
+                    <form action="{{ route('settings.maintenance') }}" method="POST">@csrf <input type="hidden" name="tipe" value="admin"><button type="submit" class="btn btn-success btn-sm"><i class="fas fa-power-off me-1"></i>Go Online</button></form>
+                    @else
+                    <div class="p-3 rounded mb-3" style="background:rgba(82,138,94,.08);border:1px solid rgba(82,138,94,.15)"><div class="d-flex align-items-center gap-2"><span style="width:10px;height:10px;border-radius:50%;background:#4caf50;display:inline-block"></span><strong style="color:var(--success)">Online</strong><span class="badge bg-success ms-1">NORMAL</span></div></div>
+                    <form action="{{ route('settings.maintenance') }}" method="POST" class="d-flex align-items-end gap-2">@csrf <input type="hidden" name="tipe" value="admin"><div><label class="form-label fw-semibold small mb-1">Durasi (Jam)</label><input type="number" name="durasi" class="form-control form-control-sm" value="2" min="1" max="72" style="width:90px"></div><button type="button" class="btn btn-warning btn-sm" onclick="if(confirm('Aktifkan Maintenance Admin? User biasa tidak bisa login.')) this.closest('form').submit()"><i class="fas fa-wrench me-1"></i>Aktifkan</button></form>
+                    @endif
+                    <small class="text-muted d-block mt-2">Staf non-Super Admin tidak bisa masuk.</small>
                 </div>
             </div>
         </div>
@@ -401,21 +398,3 @@
 @endif
 @endsection
 
-@push('scripts')
-<script>
-function confirmMaintenance(btn) {
-    if (btn.dataset.confirmed) {
-        document.getElementById('formMaintenance').submit();
-        return;
-    }
-    btn.dataset.confirmed = 'true';
-    btn.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Klik Lagi untuk Konfirmasi!';
-    btn.classList.replace('btn-warning', 'btn-danger');
-    setTimeout(() => {
-        btn.innerHTML = '<i class="fas fa-wrench me-1"></i>Aktifkan Maintenance';
-        btn.classList.replace('btn-danger', 'btn-warning');
-        delete btn.dataset.confirmed;
-    }, 3000);
-}
-</script>
-@endpush

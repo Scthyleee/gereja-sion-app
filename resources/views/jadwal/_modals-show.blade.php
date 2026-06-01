@@ -25,7 +25,7 @@
                             <option value="">Pilih petugas...</option>
                             @foreach($petugasList as $p)
                                 @php $cnt = $petugasCount[$p->id_petugas] ?? 0; $roles = $p->roles->pluck('jenis_tugas')->join(', '); @endphp
-                                <option value="{{ $p->id_petugas }}" data-roles="{{ $roles }}">
+                                <option value="{{ $p->id_petugas }}" data-roles="{{ $roles }}" data-sion="{{ $p->is_pendeta_sion ? '1' : '0' }}">
                                     {{ $p->nama_petugas }}{{ $p->is_pendeta_sion ? ' (Sion)' : '' }} — {{ $roles ?: 'Belum ada job' }} ({{ $cnt }}x)
                                 </option>
                             @endforeach
@@ -35,7 +35,7 @@
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Nominal Insentif</label>
                         <input type="number" name="nominal_insentif" id="inpInsentif" class="form-control" min="0">
-                        <small class="text-muted">Nominal diambil dari Setting Insentif berdasarkan tipe event. Kosongkan untuk auto-calculate. Pendeta Sion = Rp 0 otomatis</small>
+                        <small class="text-muted" id="insentifHint">Tipe event: <strong>{{ $tipeEvent }}</strong> — Nominal otomatis terisi dari Setting Insentif. Pendeta Sion = Rp 0.</small>
                     </div>
                 </div>
                 <div class="modal-footer" style="border-color:var(--border)"><button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button><button class="btn btn-primary">Tambah</button></div>
@@ -240,7 +240,20 @@ document.getElementById('selRandomMode')?.addEventListener('change', function() 
     document.getElementById('rowLingkungan').style.display = this.value === 'lingkungan' ? 'block' : 'none';
 });
 
-// Filter petugas dropdown by selected slot/jenis_tugas
+// Insentif config lookup map: { "jenis_tugas|tipe_event": nominal }
+const insentifMap = {
+    @foreach($allInsentifConfig as $ic)
+    '{{ addslashes($ic->jenis_tugas) }}|{{ $ic->tipe_event }}': {{ $ic->nominal }},
+    @endforeach
+};
+const currentTipeEvent = '{{ $tipeEvent }}';
+
+function lookupInsentif(jenisTugas) {
+    const key = jenisTugas + '|' + currentTipeEvent;
+    return insentifMap[key] ?? 0;
+}
+
+// Filter petugas dropdown by selected slot/jenis_tugas + auto nominal
 const selSlot = document.getElementById('selSlot');
 const selPetugas = document.getElementById('selPetugas');
 const inpJenisTugas = document.getElementById('inpJenisTugas');
@@ -248,14 +261,17 @@ const inpInsentif = document.getElementById('inpInsentif');
 const customRow = document.getElementById('customTugasRow');
 
 if (selSlot && selPetugas) {
-    // Store all original options
     const allOptions = Array.from(selPetugas.querySelectorAll('option'));
 
     selSlot.addEventListener('change', function() {
         const slotName = this.value;
-        // Show/hide custom jenis_tugas field
         if (customRow) customRow.style.display = slotName ? 'none' : 'block';
         if (slotName && inpJenisTugas) inpJenisTugas.value = slotName;
+
+        // Auto-fill nominal based on slot name
+        if (slotName && inpInsentif) {
+            inpInsentif.value = lookupInsentif(slotName);
+        }
 
         // Filter petugas options by matching jenis_tugas
         selPetugas.innerHTML = '';
@@ -265,20 +281,33 @@ if (selSlot && selPetugas) {
         selPetugas.appendChild(defaultOpt);
 
         allOptions.forEach(opt => {
-            if (!opt.value) return; // skip placeholder
-            const tugas = opt.dataset.tugas || '';
-            if (!slotName || tugas.toLowerCase().includes(slotName.toLowerCase()) || slotName.toLowerCase().includes(tugas.toLowerCase())) {
+            if (!opt.value) return;
+            const roles = (opt.dataset.roles || '').toLowerCase();
+            if (!slotName || roles.includes(slotName.toLowerCase()) || slotName.toLowerCase().includes(roles)) {
                 selPetugas.appendChild(opt.cloneNode(true));
             }
         });
     });
 
-    // Auto-fill insentif when petugas is selected
+    // Auto-fill nominal when petugas is selected (check if Pendeta Sion → 0)
     selPetugas.addEventListener('change', function() {
         const opt = this.options[this.selectedIndex];
-        if (opt && opt.dataset.insentif && inpInsentif) {
-            inpInsentif.value = opt.dataset.insentif;
+        if (opt && opt.dataset.sion === '1') {
+            inpInsentif.value = 0;
+        } else if (inpJenisTugas && inpJenisTugas.value) {
+            const nominal = lookupInsentif(inpJenisTugas.value);
+            if (nominal > 0) inpInsentif.value = nominal;
         }
+    });
+}
+
+// Also auto-fill when custom jenis_tugas changes
+if (inpJenisTugas && inpInsentif) {
+    inpJenisTugas.addEventListener('change', function() {
+        inpInsentif.value = lookupInsentif(this.value);
+    });
+    inpJenisTugas.addEventListener('blur', function() {
+        if (this.value) inpInsentif.value = lookupInsentif(this.value);
     });
 }
 </script>
