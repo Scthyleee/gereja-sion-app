@@ -380,15 +380,11 @@ class JadwalController extends Controller
                 }
             }
 
-            // Amplop PS → transaksi + transaksi_ps
-            $amplopByAkun = [];
+            // Amplop PS → HANYA buat transaksi_ps (sumber='jadwal')
+            // JANGAN buat Transaksi terpisah untuk amplop karena TransaksiPS
+            // sudah tampil di unified Transaksi view → mencegah double counting
             foreach ($jadwal->amplop as $a) {
                 foreach ($a->detail as $d) {
-                    $key = $d->kode_akun_id;
-                    if (!isset($amplopByAkun[$key])) $amplopByAkun[$key] = 0;
-                    $amplopByAkun[$key] += $d->nominal;
-
-                    // Also create transaksi_ps per amplop detail
                     $psConfig = DB::table('jenis_ps_config')->where('kode_akun', $d->kodeAkun->kode ?? '')->first();
                     $jenisPs = $psConfig->nama ?? ($d->kodeAkun->keterangan ?? $d->kodeAkun->nama ?? 'PS');
                     $kantongDana = $psConfig->kantong_dana ?? 'rutin';
@@ -400,28 +396,25 @@ class JadwalController extends Controller
                         $parts = explode('-', $lastKuitansi);
                         $nextNum = ((int)end($parts)) + 1;
                     }
-                    $noKuitansi = sprintf('PS-%s-%04d', str_replace('-', '-', $bulanStr), $nextNum);
+                    $noKuitansi = sprintf('PS-%s-%04d', $bulanStr, $nextNum);
 
                     TransaksiPS::create([
-                        'jemaat_id' => $a->warga_id,
-                        'tanggal' => $jadwal->tanggal,
-                        'bulan' => $bulanStr,
-                        'jenis_ps' => $jenisPs,
-                        'kode_akun_id' => $d->kode_akun_id,
-                        'kantong_dana' => $kantongDana,
-                        'jumlah' => $d->nominal,
-                        'diterima_oleh' => auth()->user()->nama ?? 'Sistem',
-                        'no_kuitansi' => $noKuitansi,
-                        'status' => 'verified',
-                        'sumber' => 'jadwal',
+                        'jemaat_id'        => $a->warga_id,
+                        'tanggal'          => $jadwal->tanggal,
+                        'bulan'            => $bulanStr,
+                        'jenis_ps'         => $jenisPs,
+                        'kode_akun_id'     => $d->kode_akun_id,
+                        'kantong_dana'     => $kantongDana,
+                        'jumlah'           => $d->nominal,
+                        'diterima_oleh'    => auth()->user()->nama ?? 'Sistem',
+                        'no_kuitansi'      => $noKuitansi,
+                        'status'           => 'verified',
+                        'sumber'           => 'jadwal',
                         'jadwal_ibadah_id' => $jadwal->id_jadwal,
-                        'created_by' => auth()->id(),
+                        'created_by'       => auth()->id(),
                     ]);
-                }
-            }
-            foreach ($amplopByAkun as $akunId => $total) {
-                if ($total > 0) {
-                    $this->createTransaksiFromJadwal($jadwal, $akunId, $total, "Amplop persembahan ({$jadwal->amplop->count()} amplop)");
+                    // NOTE: Tidak ada Transaksi::create di sini untuk amplop
+                    // agar tidak terjadi double counting dengan TransaksiPS
                 }
             }
 
