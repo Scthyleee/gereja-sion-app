@@ -264,7 +264,10 @@ class KeuanganController extends Controller
 
         foreach ($kantongList as $k) {
             $awal = DB::table('saldo_awal')->where('tahun', $tahun)->where('kantong_dana', $k)->value('saldo') ?? 0;
-            $masuk = Transaksi::where('tahun', $tahun)->where('kantong_dana', $k)->where('tipe', 'penerimaan')->sum('jumlah');
+            // Penerimaan = transaksi biasa + TransaksiPS (amplop dari ibadah & manual)
+            $masukTrx = Transaksi::where('tahun', $tahun)->where('kantong_dana', $k)->where('tipe', 'penerimaan')->sum('jumlah');
+            $masukPS  = \App\Models\TransaksiPS::whereYear('tanggal', $tahun)->where('kantong_dana', $k)->sum('jumlah');
+            $masuk = $masukTrx + $masukPS;
             $keluar = Transaksi::where('tahun', $tahun)->where('kantong_dana', $k)->where('tipe', 'pengeluaran')->sum('jumlah');
             $saldoData[] = [
                 'kantong' => $k,
@@ -310,7 +313,9 @@ class KeuanganController extends Controller
         $totalSaldo = 0;
         foreach ($kantongList as $k) {
             $awal = DB::table('saldo_awal')->where('tahun', $tahun)->where('kantong_dana', $k)->value('saldo') ?? 0;
-            $masuk = Transaksi::where('tahun', $tahun)->where('kantong_dana', $k)->where('tipe', 'penerimaan')->sum('jumlah');
+            $masukTrx = Transaksi::where('tahun', $tahun)->where('kantong_dana', $k)->where('tipe', 'penerimaan')->sum('jumlah');
+            $masukPS  = \App\Models\TransaksiPS::whereYear('tanggal', $tahun)->where('kantong_dana', $k)->sum('jumlah');
+            $masuk = $masukTrx + $masukPS;
             $keluar = Transaksi::where('tahun', $tahun)->where('kantong_dana', $k)->where('tipe', 'pengeluaran')->sum('jumlah');
             $akhir = $awal + $masuk - $keluar;
             $totalSaldo += $akhir;
@@ -324,7 +329,9 @@ class KeuanganController extends Controller
                 'akhir' => $akhir,
             ];
         }
-        $totalPenerimaan = Transaksi::where('tahun', $tahun)->where('tipe', 'penerimaan')->sum('jumlah');
+        // Total penerimaan = transaksi + PS
+        $totalPenerimaan = Transaksi::where('tahun', $tahun)->where('tipe', 'penerimaan')->sum('jumlah')
+            + \App\Models\TransaksiPS::whereYear('tanggal', $tahun)->sum('jumlah');
         $totalPengeluaran = Transaksi::where('tahun', $tahun)->where('tipe', 'pengeluaran')->sum('jumlah');
 
         // === RAPP REALISASI ===
@@ -373,7 +380,8 @@ class KeuanganController extends Controller
         for ($m = 1; $m <= 12; $m++) {
             $chartData[] = [
                 'bulan' => $m,
-                'penerimaan' => Transaksi::where('tipe', 'penerimaan')->where('tahun', $tahun)->where('bulan', $m)->sum('jumlah'),
+                'penerimaan' => Transaksi::where('tipe', 'penerimaan')->where('tahun', $tahun)->where('bulan', $m)->sum('jumlah')
+                    + \App\Models\TransaksiPS::whereYear('tanggal', $tahun)->whereMonth('tanggal', $m)->sum('jumlah'),
                 'pengeluaran' => Transaksi::where('tipe', 'pengeluaran')->where('tahun', $tahun)->where('bulan', $m)->sum('jumlah'),
             ];
         }
